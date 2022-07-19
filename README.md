@@ -1,6 +1,15 @@
 # EPW Visualizer
 
-Concept
+This app is going to be a simple EPW weather visualizer.
+
+There will be two pages on the site.
+#### Landing Page
+The landing page will be an interactive map with weather stations on. As seen many other places (i.e. EnergyPlus and Ladybug).
+
+When a user clicks on a weather station they are taken to the second page, where the visualizations will be.
+
+#### Visualizations Page
+The visualization page will consist of several key charts of the data and a table with the actual EPW data in.
 
 # Frameworks and Libraries
 * [Typescript](https://www.typescriptlang.org/)
@@ -19,12 +28,21 @@ Concept
 # Folder Structure
 ```
 src/
+  # Folder for static assets such as images 
   assets/
+  # Folder for the different pages, like mapPage and visualizationPage
   pages/
+  # Folder for UI components. Components can be used across different pages.
   components/
-    myComponent.tsx
-    myComponent.spec.tsx
+    # Each component has its own folder. 
+    # That way we can have one file for the acutal component and 
+    # another for the test (.spec.tsx) of the component.
+    myComponent/
+        myComponent.tsx
+        myComponent.spec.tsx
+  # Folder for utilities for styling the app
   style/
+  # main.tsx is the main entrypoint of the app.
   main.tsx
 ```
 
@@ -34,5 +52,5 @@ Make sure that you have [NodeJS](https://nodejs.org/en/) and [Git](https://git-s
 
 ## Get Code
 * Fork and Clone Github Repo
-* npm install
-* npm run dev
+* Install Node packages: `npm install`
+* Run development server: `npm run dev`
