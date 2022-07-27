@@ -1,6 +1,7 @@
 import React from 'react'
 import { Grid, Typography } from "@mui/material";
-import CloudIcon from '@mui/icons-material/Cloud';
+import { Map } from "../../components/Map";
+
 
 export const MapPage = () => {
   return (
@@ -18,7 +19,7 @@ export const MapPage = () => {
         </Typography>
       </Grid>
       <Grid item>
-        <CloudIcon color="info" sx={{fontSize: "20rem"}}/>
+        <Map />
       </Grid>
     </Grid>
   );
