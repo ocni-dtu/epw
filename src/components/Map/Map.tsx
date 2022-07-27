@@ -1,33 +1,43 @@
-import React from "react";
-import { Mercator, Graticule } from '@visx/geo';
-import * as topojson from 'topojson-client';
-import worldTopology from '../../assets/world.json';
-import epwTopology from '../../assets/epws.json';
+import React, { useCallback } from "react";
+import { Graticule, Mercator } from "@visx/geo";
+import * as topojson from "topojson-client";
+import worldTopology from "../../assets/world.json";
+import epwTopology from "../../assets/epws.json";
 import { ParsedFeature } from "@visx/geo/lib/projections/Projection";
-import { GeoPath, GeoProjection, geoMercator } from "d3-geo";
-import { Zoom } from '@visx/zoom';
+// eslint-disable-next-line import/named
+import { geoMercator, GeoPath, GeoProjection } from "d3-geo";
+import { Zoom } from "@visx/zoom";
+import { RectClipPath } from "@visx/clip-path";
+import { localPoint } from "@visx/event";
+import { Tooltip, useTooltip } from "@visx/tooltip";
+import { ButtonGroup, IconButton } from "@mui/material";
+import { CenterFocusWeak, RestartAltRounded, ZoomIn, ZoomOut } from "@mui/icons-material";
 
 interface FeatureShape {
-  type: 'Feature';
+  type: "Feature";
   id: string;
-  geometry: { coordinates: [number, number][][]; type: 'Polygon' | "Point" };
+  geometry: { coordinates: [number, number][][]; type: "Polygon" | "Point" };
   properties: { name: string };
 }
 
 interface FeatureCollection {
-  type: 'FeatureCollection';
+  type: "FeatureCollection";
   features: FeatureShape[];
 }
 
-const world = topojson.feature(worldTopology, worldTopology.objects.units) as FeatureCollection
+const world = topojson.feature(worldTopology, worldTopology.objects.units) as FeatureCollection;
 
 const epwLocations = epwTopology as FeatureCollection;
+
+let tooltipTimeout: number;
 
 interface MapProps {
   height: number;
   width: number;
 }
-export const Map: React.FC<MapProps> = ({height= 500, width = 800}) => {
+
+export const Map: React.FC<MapProps> = ({ height = 500, width = 800 }) => {
+  const {hideTooltip, showTooltip, tooltipData, tooltipLeft, tooltipTop} = useTooltip();
 
   const centerX = width / 2;
 
@@ -37,72 +47,191 @@ export const Map: React.FC<MapProps> = ({height= 500, width = 800}) => {
 
   const scale = (width / 630) * 100;
 
-  const background = '#f9f7e8';
+  const background = "#f9f7e8";
 
   const projection = geoMercator().translate(translate).scale(scale);
 
+  const initialTransform = {
+    scaleX: 1,
+    scaleY: 1,
+    translateX: 0,
+    translateY: 0,
+    skewX: 0,
+    skewY: 0,
+  };
+
   return (
-    <svg width={width} height={height}>
-      <rect x={0} y={0} width={width} height={height} fill={background} rx={14} />
-      <Mercator<FeatureShape>
-        data={world.features}
-        scale={scale}
-        translate={[centerX, centerY + 50]}
+    <>
+      <Zoom<SVGSVGElement>
+        width={width}
+        height={height}
+        scaleXMin={1 / 2}
+        scaleXMax={4}
+        scaleYMin={1 / 2}
+        scaleYMax={4}
+        initialTransformMatrix={initialTransform}
       >
-        {(mercator) => (
-          <CountryOutline background={background} mercator={mercator}/>
+        {(zoom) => (
+          <div>
+            <svg
+              width={width}
+              height={height}
+              style={{ cursor: zoom.isDragging ? "grabbing" : "grab", touchAction: "none" }}
+              ref={zoom.containerRef}
+            >
+              <RectClipPath id="zoom-clip" width={width} height={height} />
+              <rect width={width} height={height} rx={14} fill={background} />
+              <rect
+                width={width}
+                height={height}
+                rx={14}
+                fill="transparent"
+                onTouchStart={zoom.dragStart}
+                onTouchMove={zoom.dragMove}
+                onTouchEnd={zoom.dragEnd}
+                onMouseDown={zoom.dragStart}
+                onMouseMove={zoom.dragMove}
+                onMouseUp={zoom.dragEnd}
+                onMouseLeave={() => {
+                  if (zoom.isDragging) zoom.dragEnd();
+                }}
+                onDoubleClick={(event) => {
+                  const point = localPoint(event) || { x: 0, y: 0 };
+
+                  zoom.scale({ scaleX: 1.1, scaleY: 1.1, point });
+                }}
+              />
+              <Mercator<FeatureShape> data={world.features} scale={scale} translate={[centerX, centerY + 50]}>
+                {(mercator) => (
+                  <CountryOutline background={background} mercator={mercator} transform={zoom.toString()} />
+                )}
+              </Mercator>
+              <EpwLocations
+                projection={projection}
+                locations={epwLocations}
+                transform={zoom.toString()}
+                scale={zoom.transformMatrix.scaleX}
+                hideTooltip={hideTooltip}
+                showTooltip={showTooltip}
+              />
+            </svg>
+            <ControlButtons zoom={zoom} />
+            {tooltipData && (
+              <Tooltip left={tooltipLeft} top={tooltipTop}>
+                <div>
+                  {tooltipData}
+                </div>
+              </Tooltip>
+            )}
+          </div>
         )}
-      </Mercator>
-      <EpwLocations projection={projection} locations={epwLocations}/>
-    </svg>
+      </Zoom>
+    </>
   );
 };
 
 interface CountryOutlineProps {
   background: string;
   mercator: {
-    features: (ParsedFeature<FeatureShape>)[];
+    features: ParsedFeature<FeatureShape>[];
     path: GeoPath;
-  }
+  };
+  transform: string;
 }
-const CountryOutline: React.FC<CountryOutlineProps> = ({mercator, background}) => {
+
+const CountryOutline: React.FC<CountryOutlineProps> = ({ mercator, background, transform }) => {
   return (
-    <g>
-      <Graticule graticule={(g) => mercator.path(g) || ''} stroke="rgba(33,33,33,0.05)" />
-      {mercator.features.map(({ feature, path }, i) => (
-        <path
-          key={`map-feature-${i}`}
-          d={path || ''}
-          fill={'#5a714a'}
-          stroke={background}
-          strokeWidth={0.5}
-        />
+    <g transform={transform}>
+      <Graticule graticule={(g) => mercator.path(g) || ""} stroke="rgba(33,33,33,0.05)" />
+      {mercator.features.map(({ path }, i) => (
+        <path key={`map-feature-${i}`} d={path || ""} fill={"#5a714a"} stroke={background} strokeWidth={0.5} />
       ))}
     </g>
-  )
-}
+  );
+};
 
 interface EpwLocationsProps {
-  locations: FeatureCollection
-  projection: GeoProjection
+  locations: FeatureCollection;
+  projection: GeoProjection;
+  transform: string;
 }
-const EpwLocations: React.FC<EpwLocationsProps> = ({locations, projection}) => {
+
+const EpwLocations: React.FC<EpwLocationsProps> = ({
+  locations,
+  projection,
+  transform,
+  scale,
+  showTooltip,
+  hideTooltip,
+}) => {
+  const handleMouseEnter = useCallback(
+    (event: React.MouseEvent, location: { x: number; y: number }, title) => {
+      if (tooltipTimeout) clearTimeout(tooltipTimeout);
+
+      const point = localPoint(event)
+
+      showTooltip({
+        tooltipLeft: point.x,
+        tooltipTop: point.y,
+        tooltipData: title,
+      });
+    },
+    [location]
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    tooltipTimeout = window.setTimeout(() => {
+      hideTooltip();
+    }, 300);
+  }, [hideTooltip]);
 
   return (
-    <g>
+    <g transform={transform}>
       {locations.features?.map((location, index) => (
         <circle
+          onMouseEnter={(e) =>
+            handleMouseEnter(e, {
+              x: location.geometry.coordinates[0],
+              y: location.geometry.coordinates[1],
+            }, location.properties.title)
+          }
+          style={{cursor: "pointer"}}
+          onMouseLeave={handleMouseLeave}
           key={index}
-          r={3}
+          r={3 - scale / 2}
           fill="none"
           stroke="#333"
-          strokeWidth={3}
-          transform={`translate(${projection([
-            location.geometry.coordinates[0],
-            location.geometry.coordinates[1],
-          ])})`}
+          strokeWidth={3 - scale / 2}
+          transform={`translate(${projection([location.geometry.coordinates[0], location.geometry.coordinates[1]])})`}
         />
       ))}
     </g>
-  )
+  );
+};
+
+interface ControlButtonsProps {
+  zoom: {
+    scale: ({ scaleX: number, scaleY: number }) => void;
+    center: () => void;
+    reset: () => void;
+  };
 }
+
+const ControlButtons: React.FC<ControlButtonsProps> = ({ zoom }) => {
+  return (
+    <ButtonGroup variant="contained" aria-label="outlined primary button group">
+      <IconButton onClick={() => zoom.scale({ scaleX: 1.2, scaleY: 1.2 })}>
+        <ZoomIn />
+      </IconButton>
+      <IconButton onClick={() => zoom.scale({ scaleX: 0.8, scaleY: 0.8 })}>
+        <ZoomOut />
+      </IconButton>
+      <IconButton onClick={zoom.center}>
+        <CenterFocusWeak />
+      </IconButton>
+      <IconButton onClick={zoom.reset}>
+        <RestartAltRounded />
+      </IconButton>
+    </ButtonGroup>
+  );
+};
