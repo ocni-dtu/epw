@@ -10,8 +10,9 @@ import { Zoom } from "@visx/zoom";
 import { RectClipPath } from "@visx/clip-path";
 import { localPoint } from "@visx/event";
 import { Tooltip, useTooltip } from "@visx/tooltip";
-import { ButtonGroup, IconButton } from "@mui/material";
+import { ButtonGroup, IconButton, Typography, useTheme } from "@mui/material";
 import { CenterFocusWeak, RestartAltRounded, ZoomIn, ZoomOut } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 
 interface FeatureShape {
   type: "Feature";
@@ -32,12 +33,14 @@ const epwLocations = epwTopology as FeatureCollection;
 let tooltipTimeout: number;
 
 interface MapProps {
-  height: number;
-  width: number;
+  height?: number;
+  width?: number;
 }
 
 export const Map: React.FC<MapProps> = ({ height = 500, width = 800 }) => {
   const {hideTooltip, showTooltip, tooltipData, tooltipLeft, tooltipTop} = useTooltip();
+
+  const theme = useTheme();
 
   const centerX = width / 2;
 
@@ -47,7 +50,7 @@ export const Map: React.FC<MapProps> = ({ height = 500, width = 800 }) => {
 
   const scale = (width / 630) * 100;
 
-  const background = "#f9f7e8";
+  const background = theme.palette.backgroundColor;
 
   const projection = geoMercator().translate(translate).scale(scale);
 
@@ -72,7 +75,7 @@ export const Map: React.FC<MapProps> = ({ height = 500, width = 800 }) => {
         initialTransformMatrix={initialTransform}
       >
         {(zoom) => (
-          <div>
+          <div data-testid="epw-map">
             <svg
               width={width}
               height={height}
@@ -117,10 +120,10 @@ export const Map: React.FC<MapProps> = ({ height = 500, width = 800 }) => {
             </svg>
             <ControlButtons zoom={zoom} />
             {tooltipData && (
-              <Tooltip left={tooltipLeft} top={tooltipTop}>
-                <div>
+              <Tooltip left={tooltipLeft} top={tooltipTop +125}>
+                <Typography variant="caption" color="primary">
                   {tooltipData}
-                </div>
+                </Typography>
               </Tooltip>
             )}
           </div>
@@ -140,20 +143,31 @@ interface CountryOutlineProps {
 }
 
 const CountryOutline: React.FC<CountryOutlineProps> = ({ mercator, background, transform }) => {
+  const theme = useTheme()
+
   return (
     <g transform={transform}>
-      <Graticule graticule={(g) => mercator.path(g) || ""} stroke="rgba(33,33,33,0.05)" />
+      <Graticule graticule={(g) => mercator.path(g) || ""} stroke={theme.palette.gridLines} />
       {mercator.features.map(({ path }, i) => (
-        <path key={`map-feature-${i}`} d={path || ""} fill={"#5a714a"} stroke={background} strokeWidth={0.5} />
+        <path key={`map-feature-${i}`} d={path || ""} fill={theme.palette.countryColor} stroke={background} strokeWidth={0.5} />
       ))}
     </g>
   );
 };
 
+interface TooltipProps {
+  tooltipLeft: number
+  tooltipTop: number
+  tooltipData: string
+}
+
 interface EpwLocationsProps {
   locations: FeatureCollection;
   projection: GeoProjection;
   transform: string;
+  scale: number;
+  showTooltip: (TooltipProps) => void;
+  hideTooltip: () => void;
 }
 
 const EpwLocations: React.FC<EpwLocationsProps> = ({
@@ -164,8 +178,12 @@ const EpwLocations: React.FC<EpwLocationsProps> = ({
   showTooltip,
   hideTooltip,
 }) => {
+  const navigate = useNavigate();
+
+  const theme = useTheme();
+
   const handleMouseEnter = useCallback(
-    (event: React.MouseEvent, location: { x: number; y: number }, title) => {
+    (event: React.MouseEvent, location: { x: number; y: number }, title: string) => {
       if (tooltipTimeout) clearTimeout(tooltipTimeout);
 
       const point = localPoint(event)
@@ -195,12 +213,14 @@ const EpwLocations: React.FC<EpwLocationsProps> = ({
               y: location.geometry.coordinates[1],
             }, location.properties.title)
           }
+          data-testid="map-epw-location"
           style={{cursor: "pointer"}}
           onMouseLeave={handleMouseLeave}
+          onClick={() => navigate(`/visualization/${location.properties.title}`)}
           key={index}
           r={3 - scale / 2}
           fill="none"
-          stroke="#333"
+          stroke={theme.palette.primary.main}
           strokeWidth={3 - scale / 2}
           transform={`translate(${projection([location.geometry.coordinates[0], location.geometry.coordinates[1]])})`}
         />
@@ -219,7 +239,7 @@ interface ControlButtonsProps {
 
 const ControlButtons: React.FC<ControlButtonsProps> = ({ zoom }) => {
   return (
-    <ButtonGroup variant="contained" aria-label="outlined primary button group">
+    <ButtonGroup data-testid="map-control-buttons" variant="contained" aria-label="outlined primary button group">
       <IconButton onClick={() => zoom.scale({ scaleX: 1.2, scaleY: 1.2 })}>
         <ZoomIn />
       </IconButton>
