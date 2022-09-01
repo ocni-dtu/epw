@@ -1,25 +1,18 @@
-import React from 'react'
-import { Grid, Typography } from "@mui/material";
-import CloudIcon from '@mui/icons-material/Cloud';
+import React from "react";
+import { Route, Routes } from "react-router-dom";
+import { MapPage } from "../../pages/MapPage";
+import { VisualizationPage } from "../../pages/VisualizationPage";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 export const App = () => {
   return (
-    <Grid
-      container
-      spacing={0}
-      direction="column"
-      alignItems="center"
-      justifyContent="center"
-      style={{ minHeight: "100vh" }}
-    >
-      <Grid item>
-        <Typography variant="h2" sx={{ textAlign: "center" }}>
-          Welcome to the EPW Visualizer App!
-        </Typography>
-      </Grid>
-      <Grid item>
-        <CloudIcon color="info" sx={{fontSize: "20rem"}}/>
-      </Grid>
-    </Grid>
+    <QueryClientProvider client={queryClient}>
+      <Routes>
+        <Route path="/" element={<MapPage />} />
+        <Route path="/visualization/:epwId" element={<VisualizationPage />} />
+      </Routes>
+    </QueryClientProvider>
   );
 };
