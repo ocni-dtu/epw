@@ -1,4 +1,3 @@
-import epwUrls from "../assets/epwUrls.json";
 // eslint-disable-next-line import/no-unresolved
 import { parse } from "csv-parse/browser/esm/sync";
 
@@ -59,17 +58,21 @@ export interface EpwData {
   data: WeatherData[];
 }
 
-export const fetchEpwData = (epwId: keyof typeof epwUrls | undefined) => {
+export const fetchEpwData = async (epwId: string | undefined) => {
   if (!epwId) {
     throw new Error("no epw id given");
   }
-  const url = epwUrls[epwId];
+  const epwUrls = (await import("../assets/epwUrls.json")).default
 
-  return fetch(url, {}).then(response => {
-    return response.text();
-  }).then(text => {
-    return parseEpwData(text)
-  })
+  if (Object.keys(epwUrls).indexOf(epwId) === -1) {
+    throw new Error(`${epwId} is not a valid location`);
+  }
+
+  const url = epwUrls[epwId as keyof typeof epwUrls];
+
+  const response = await fetch(url, {});
+  const text = await response.text();
+  return parseEpwData(text);
 };
 
 
@@ -118,7 +121,7 @@ export const parseEpwData = (epwData: string) => {
       "liquidPrecipitationDepth",
       "liquidPrecipitationQuantity",
     ],
-  });
+  }) as WeatherData[];
 
-  return { data: epwRaw as WeatherData[] } as EpwData;
+  return { data: epwRaw } as EpwData;
 };

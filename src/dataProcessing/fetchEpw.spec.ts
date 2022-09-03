@@ -6,8 +6,7 @@ import { fetchEpwData, parseEpwData } from "./fetchEpw";
 // Polyfill "window.fetch" used in the React component.
 import "whatwg-fetch"
 
-const cphEpwData = `
-LOCATION,COPENHAGEN,-,DNK,IWEC Data,061800,55.63,12.67,1.0,5.0
+const cphEpwData = `LOCATION,COPENHAGEN,-,DNK,IWEC Data,061800,55.63,12.67,1.0,5.0
 DESIGN CONDITIONS,1,Climate Design Data 2009 ASHRAE Handbook,,Heating,2,-9.2,-6.7,-12,1.3,-7.6,-10,1.6,-4.9,14.7,4.1,13.3,3.4,4.8,50,Cooling,7,8,25.5,17.9,24,17.3,22.2,16.5,19.3,23.4,18.4,22.3,17.5,21.2,4.6,160,17.9,12.9,20.8,16.9,12.1,20,15.9,11.3,19.3,54.8,23.1,51.8,22.1,49.2,21.1,1044,Extremes,12.7,11.4,10.3,22.4,-11,27.9,3.6,1.7,-13.6,29.1,-15.6,30,-17.6,31,-20.2,32.2
 TYPICAL/EXTREME PERIODS,6,Summer - Week Nearest Max Temperature For Period,Extreme,8/ 3,8/ 9,Summer - Week Nearest Average Temperature For Period,Typical,7/ 6,7/12,Winter - Week Nearest Min Temperature For Period,Extreme,2/10,2/16,Winter - Week Nearest Average Temperature For Period,Typical,12/15,12/21,Autumn - Week Nearest Average Temperature For Period,Typical,9/22,9/28,Spring - Week Nearest Average Temperature For Period,Typical,4/ 5,4/11
 GROUND TEMPERATURES,3,.5,,,,3.98,1.38,0.68,1.29,4.79,8.71,12.40,15.07,15.85,14.59,11.57,7.76,2,,,,6.31,3.88,2.72,2.68,4.53,7.21,10.09,12.57,13.84,13.60,11.90,9.28,4,,,,7.83,5.94,4.78,4.43,5.11,6.67,8.61,10.51,11.79,12.10,11.37,9.84
@@ -38,7 +37,7 @@ DATA PERIODS,1,1,Data,Sunday, 1/ 1,12/31
 `
 
 export const restHandlers = [
-  rest.get("https://energyplus-weather.s3.amazonaws.com/europe_wmo_region_6/DNK/DNK_Copenhagen.061800_IWEC/DNK_Copenhagen.061800_IWEC.epw", (req, res, ctx) => {
+  rest.get("http://data.kongsgaard.eu/europe_wmo_region_6/DNK/DNK_Copenhagen.061800_IWEC/DNK_Copenhagen.061800_IWEC.epw", (req, res, ctx) => {
     return res(ctx.status(200), ctx.text(cphEpwData))
   }),
 ]

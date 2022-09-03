@@ -11,7 +11,7 @@ import { rest } from "msw";
 // Polyfill "window.fetch" used in the React component.
 import "whatwg-fetch"
 
-test("Should render VisualizationPage", async () => {
+test("Should render VisualizationPage", () => {
   const cphEpwData = `
 LOCATION,COPENHAGEN,-,DNK,IWEC Data,061800,55.63,12.67,1.0,5.0
 DESIGN CONDITIONS,1,Climate Design Data 2009 ASHRAE Handbook,,Heating,2,-9.2,-6.7,-12,1.3,-7.6,-10,1.6,-4.9,14.7,4.1,13.3,3.4,4.8,50,Cooling,7,8,25.5,17.9,24,17.3,22.2,16.5,19.3,23.4,18.4,22.3,17.5,21.2,4.6,160,17.9,12.9,20.8,16.9,12.1,20,15.9,11.3,19.3,54.8,23.1,51.8,22.1,49.2,21.1,1044,Extremes,12.7,11.4,10.3,22.4,-11,27.9,3.6,1.7,-13.6,29.1,-15.6,30,-17.6,31,-20.2,32.2
