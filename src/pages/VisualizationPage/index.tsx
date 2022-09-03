@@ -1,1 +1,3 @@
-export * from "./VisualizationPage";
+import { VisualizationPage } from "./VisualizationPage";
+
+export default VisualizationPage;

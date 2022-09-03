@@ -23,7 +23,7 @@ export const EpwTable: React.FC<EpwTableProps> = (props) => {
 
   const columns = [
     { field: "date", headerName: "Date", width: columnWidth,
-      valueGetter: (params: GridValueGetterParams) => (`${String(params.row.month).padStart(2, '0')}/${String(params.row.day).padStart(2, '0')} ${String(params.row.hour).padStart(2, '0')}:00`)
+      valueGetter: (params: GridValueGetterParams<WeatherData, WeatherData>) => (`${String(params.row.month).padStart(2, '0')}/${String(params.row.day).padStart(2, '0')} ${String(params.row.hour).padStart(2, '0')}:00`)
     },
     { field: "year", headerName: "Year", width: columnWidth },
     { field: "month", headerName: "Month", width: columnWidth },
